@@ -1,0 +1,1477 @@
+<!DOCTYPE html>
+<html lang="ru" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NexusLoot — Игровой магазин и токены</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            obsidian: '#070b14',
+            surface: '#0f1629',
+            surfaceHover: '#16203a',
+            accent: '#7c3aed',
+            accentGlow: '#8b5cf6',
+            emeraldNeon: '#10b981',
+          },
+          boxShadow: {
+            neon: '0 0 25px rgba(124, 58, 237, 0.28)',
+            emeraldGlow: '0 0 20px rgba(16, 185, 129, 0.22)',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #070b14;
+      color: #f8fafc;
+      font-family: 'Inter', sans-serif;
+      background-image:
+        radial-gradient(circle at 15% 10%, rgba(124, 58, 237, 0.14), transparent 35%),
+        radial-gradient(circle at 85% 20%, rgba(16, 185, 129, 0.10), transparent 35%);
+      min-height: 100vh;
+    }
+    /* Custom subtle scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0b1120;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #253352;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #3b4f7a;
+    }
+    @keyframes pulseSoft {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.55; transform: scale(1.15); }
+    }
+    .animate-pulse-soft {
+      animation: pulseSoft 2s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="antialiased selection:bg-violet-600 selection:text-white">
+
+  <!-- Top Navigation Bar -->
+  <header class="sticky top-0 z-40 border-b border-slate-800/80 bg-obsidian/85 backdrop-blur-xl">
+    <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
+      <!-- Brand & Online Indicator -->
+      <div class="flex items-center gap-3 sm:gap-4">
+        <div class="flex items-center gap-2.5">
+          <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 text-lg font-extrabold shadow-neon">
+            ⚡
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-base font-extrabold tracking-tight text-white sm:text-lg">NEXUS<span class="text-violet-400">LOOT</span></span>
+              <span class="hidden rounded-full border border-violet-500/30 bg-violet-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-violet-300 sm:inline-block">Market</span>
+            </div>
+            <p class="text-[11px] text-slate-400">Игровые предметы и токены</p>
+          </div>
+        </div>
+
+        <!-- Live Online Badge -->
+        <button
+          id="onlineBadgeBtn"
+          type="button"
+          class="flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-300 transition hover:bg-emerald-500/20"
+          title="Посмотреть кто онлайн"
+        >
+          <span class="h-2 w-2 rounded-full bg-emerald-400 animate-pulse-soft"></span>
+          <span>Онлайн: <strong id="onlineCountHeader" class="font-bold text-white">1</strong></span>
+        </button>
+      </div>
+
+      <!-- Right Controls: Balance, Registration, Chat, Publish Lot -->
+      <div class="flex flex-wrap items-center gap-2 sm:gap-2.5">
+        <!-- Current User Pill -->
+        <div id="currentUserPill" class="flex items-center gap-2 rounded-xl border border-slate-800 bg-surface px-3 py-1.5 text-xs">
+          <span id="userRoleBadge" class="rounded-md bg-slate-800 px-1.5 py-0.5 text-[10px] font-bold uppercase text-slate-300">Гость</span>
+          <span id="userNameDisplay" class="font-semibold text-white">Не авторизован</span>
+          <span class="text-slate-600">|</span>
+          <span class="flex items-center gap-1 font-bold text-amber-300">
+            <span>🪙</span>
+            <span id="userTokensDisplay">0</span>
+          </span>
+        </div>
+
+        <!-- Publish Lot Button -->
+        <button
+          id="openPublishLotBtn"
+          type="button"
+          class="flex items-center gap-1.5 rounded-xl border border-violet-500/40 bg-violet-600/20 px-3 py-2 text-xs font-semibold text-violet-200 transition hover:bg-violet-600/35 active:scale-95"
+        >
+          <span>＋</span>
+          <span>Разместить лот</span>
+        </button>
+
+        <!-- Chat / Buy Tokens Button -->
+        <button
+          id="openChatBtn"
+          type="button"
+          class="relative flex items-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/15 px-3 py-2 text-xs font-semibold text-emerald-200 transition hover:bg-emerald-500/25 active:scale-95"
+        >
+          <span>💬</span>
+          <span class="hidden sm:inline">Написать админу</span>
+          <span class="sm:hidden">Чат</span>
+          <span id="unreadBadge" class="hidden rounded-full bg-emerald-400 px-1.5 py-0.2 text-[10px] font-extrabold text-slate-950">1</span>
+        </button>
+
+        <!-- Registration / Switch Account Button -->
+        <button
+          id="openRegBtn"
+          type="button"
+          class="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-3.5 py-2 text-xs font-bold text-white shadow-neon transition hover:brightness-110 active:scale-95"
+        >
+          <span>👤</span>
+          <span id="regBtnLabel">Регистрация</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Toast Notification Banner (Replaces alert) -->
+  <div id="toastContainer" class="pointer-events-none fixed bottom-4 right-4 z-50 flex max-w-sm flex-col gap-2"></div>
+
+  <!-- Main Content Container -->
+  <main class="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
+
+    <!-- Hero & Admin Rule Banner -->
+    <section class="mb-8 grid grid-cols-1 gap-4 lg:grid-cols-12">
+      <div class="rounded-2xl border border-slate-800/90 bg-gradient-to-br from-surface via-surface to-indigo-950/30 p-5 sm:p-6 lg:col-span-8">
+        <div class="mb-2 flex flex-wrap items-center gap-2">
+          <span class="rounded-full bg-emerald-500/15 px-2.5 py-1 text-[11px] font-semibold text-emerald-300 border border-emerald-500/30">
+            ● Маркетплейс активен
+          </span>
+          <span class="rounded-full bg-violet-500/15 px-2.5 py-1 text-[11px] font-semibold text-violet-300 border border-violet-500/30">
+            Google Pay поддерживается
+          </span>
+        </div>
+        <h1 class="text-xl font-extrabold tracking-tight text-white sm:text-3xl">
+          Игровые токены, редкие лоты и быстрая выдача
+        </h1>
+        <p class="mt-2 max-w-2xl text-xs leading-relaxed text-slate-400 sm:text-sm">
+          Покупайте токены через <span class="font-semibold text-white">Google Pay</span> (например, <span class="text-emerald-300 font-semibold">1000 токенов за $10</span>), обменивайте на игровые предметы или пишите напрямую администратору для индивидуальной покупки токенов.
+        </p>
+
+        <!-- Quick Stats -->
+        <div class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div class="rounded-xl border border-slate-800/80 bg-obsidian/70 p-3">
+            <div class="text-[11px] text-slate-400">Пользователей</div>
+            <div id="statTotalUsers" class="mt-0.5 text-lg font-extrabold text-white">0</div>
+          </div>
+          <div class="rounded-xl border border-slate-800/80 bg-obsidian/70 p-3">
+            <div class="text-[11px] text-slate-400">Сейчас онлайн</div>
+            <div id="statOnlineUsers" class="mt-0.5 text-lg font-extrabold text-emerald-400">1</div>
+          </div>
+          <div class="rounded-xl border border-slate-800/80 bg-obsidian/70 p-3">
+            <div class="text-[11px] text-slate-400">Активных лотов</div>
+            <div id="statLotsCount" class="mt-0.5 text-lg font-extrabold text-violet-400">0</div>
+          </div>
+          <div class="rounded-xl border border-slate-800/80 bg-obsidian/70 p-3">
+            <div class="text-[11px] text-slate-400">Администратор</div>
+            <div id="statAdminName" class="mt-0.5 truncate text-sm font-bold text-amber-300">Ожидает 1-го рег.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- First User = Admin Card -->
+      <div class="flex flex-col justify-between rounded-2xl border border-amber-500/30 bg-gradient-to-b from-amber-500/10 via-surface to-surface p-5 sm:p-6 lg:col-span-4">
+        <div>
+          <div class="flex items-center justify-between">
+            <span class="inline-flex items-center gap-1.5 rounded-lg bg-amber-500/20 px-2.5 py-1 text-xs font-bold text-amber-300">
+              👑 Правило ролей
+            </span>
+            <span id="adminStatusTag" class="text-xs font-semibold text-amber-300">Слот свободен</span>
+          </div>
+          <h2 class="mt-3 text-base font-bold text-white sm:text-lg">
+            Первый зарегистрированный — Админ
+          </h2>
+          <p class="mt-1.5 text-xs leading-relaxed text-slate-300">
+            Самый первый пользователь, прошедший регистрацию, автоматически становится <strong class="text-amber-300">Администратором</strong>: он может выдавать токены игрокам, отвечать на сообщения о покупке токенов и управлять лотами.
+          </p>
+        </div>
+
+        <div class="mt-4 flex flex-wrap items-center gap-2">
+          <button
+            id="heroRegBtn"
+            type="button"
+            class="flex-1 rounded-xl bg-amber-400 px-4 py-2.5 text-xs font-extrabold text-slate-950 transition hover:bg-amber-300 active:scale-95"
+          >
+            Зарегистрироваться
+          </button>
+          <button
+            id="heroMsgAdminBtn"
+            type="button"
+            class="rounded-xl border border-slate-700 bg-slate-800/80 px-3.5 py-2.5 text-xs font-semibold text-white transition hover:bg-slate-700"
+          >
+            💬 Написать по токенам
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Admin Control Panel (Visible when logged-in user is Admin) -->
+    <section id="adminPanelSection" class="mb-8 hidden rounded-2xl border border-amber-500/40 bg-gradient-to-r from-amber-950/30 via-surface to-violet-950/20 p-5 sm:p-6 shadow-lg">
+      <div class="flex flex-col justify-between gap-4 border-b border-slate-800 pb-4 md:flex-row md:items-center">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="rounded-md bg-amber-500/20 px-2 py-0.5 text-xs font-extrabold text-amber-300">👑 ПАНЕЛЬ АДМИНИСТРАТОРА</span>
+            <span class="text-xs text-slate-400">Вы первый зарегистрированный пользователь</span>
+          </div>
+          <h2 class="mt-1 text-lg font-bold text-white">Выдача токенов и запросы игроков</h2>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <button
+            id="adminOpenChatBtn"
+            type="button"
+            class="rounded-xl bg-emerald-500/20 border border-emerald-500/40 px-3.5 py-2 text-xs font-bold text-emerald-300 hover:bg-emerald-500/30"
+          >
+            💬 Сообщения по покупке токенов (<span id="adminMsgCount">0</span>)
+          </button>
+          <button
+            id="adminQuickLotBtn"
+            type="button"
+            class="rounded-xl bg-violet-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-violet-500"
+          >
+            ＋ Новый лот
+          </button>
+        </div>
+      </div>
+
+      <!-- Issue Tokens Form & Users List -->
+      <div class="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-12">
+        <!-- Issue Tokens Form -->
+        <form id="issueTokensForm" class="space-y-3 rounded-xl border border-slate-800 bg-obsidian/70 p-4 lg:col-span-5">
+          <h3 class="text-sm font-bold text-white">🪙 Выдать токены пользователю</h3>
+          <div>
+            <label class="mb-1 block text-xs text-slate-400">Выберите игрока</label>
+            <select
+              id="targetUserSelect"
+              class="w-full rounded-xl border border-slate-700 bg-surface px-3 py-2.5 text-xs text-white focus:border-amber-400 focus:outline-none"
+            ></select>
+          </div>
+          <div>
+            <label class="mb-1 block text-xs text-slate-400">Количество токенов</label>
+            <div class="flex gap-2">
+              <input
+                id="issueTokensAmount"
+                type="number"
+                min="1"
+                step="1"
+                value="1000"
+                required
+                class="w-full rounded-xl border border-slate-700 bg-surface px-3 py-2.5 text-xs font-semibold text-white focus:border-amber-400 focus:outline-none"
+              />
+              <button
+                type="button"
+                data-preset-tokens="1000"
+                class="preset-token-btn rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-xs font-semibold text-slate-200 hover:border-amber-400"
+              >
+                1000
+              </button>
+              <button
+                type="button"
+                data-preset-tokens="5000"
+                class="preset-token-btn rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-xs font-semibold text-slate-200 hover:border-amber-400"
+              >
+                5000
+              </button>
+            </div>
+          </div>
+          <button
+            type="submit"
+            class="w-full rounded-xl bg-gradient-to-r from-amber-400 to-yellow-500 px-4 py-2.5 text-xs font-extrabold text-slate-950 transition hover:brightness-105 active:scale-95"
+          >
+            Выдать токены
+          </button>
+        </form>
+
+        <!-- Registered & Online Users Table -->
+        <div class="rounded-xl border border-slate-800 bg-obsidian/70 p-4 lg:col-span-7">
+          <div class="mb-3 flex items-center justify-between">
+            <h3 class="text-sm font-bold text-white">👥 Зарегистрированные игроки и онлайн</h3>
+            <span class="text-xs text-slate-400">Мгновенная выдача в 1 клик</span>
+          </div>
+          <div id="adminUsersList" class="max-h-56 space-y-2 overflow-y-auto pr-1"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Category Filters & Search -->
+    <section class="mb-5 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+      <div class="flex flex-wrap items-center gap-2" id="categoryFilters">
+        <button data-filter="all" class="filter-btn rounded-xl bg-violet-600 px-3.5 py-2 text-xs font-bold text-white">
+          Все лоты
+        </button>
+        <button data-filter="gpay" class="filter-btn rounded-xl border border-slate-800 bg-surface px-3.5 py-2 text-xs font-semibold text-slate-300 hover:border-slate-700">
+          💳 Google Pay Токены
+        </button>
+        <button data-filter="item" class="filter-btn rounded-xl border border-slate-800 bg-surface px-3.5 py-2 text-xs font-semibold text-slate-300 hover:border-slate-700">
+          ⚔️ Игровые предметы
+        </button>
+      </div>
+
+      <div class="relative w-full sm:w-64">
+        <input
+          id="lotSearchInput"
+          type="text"
+          placeholder="Поиск по лотам..."
+          class="w-full rounded-xl border border-slate-800 bg-surface py-2 pl-9 pr-3 text-xs text-white placeholder-slate-500 focus:border-violet-500 focus:outline-none"
+        />
+        <span class="pointer-events-none absolute left-3 top-2.5 text-xs text-slate-500">🔍</span>
+      </div>
+    </section>
+
+    <!-- Lots Grid -->
+    <section id="lotsGrid" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"></section>
+  </main>
+
+  <!-- =================================================================== -->
+  <!-- MODAL 1: REGISTRATION & ACCOUNT SWITCHER ("Окно регистрации")         -->
+  <!-- =================================================================== -->
+  <div id="regModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
+    <div class="w-full max-w-md rounded-2xl border border-slate-800 bg-surface p-5 sm:p-6 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div>
+          <h3 class="text-lg font-extrabold text-white">Регистрация аккаунта</h3>
+          <p class="text-xs text-slate-400">Первый зарегистрированный становится Админом</p>
+        </div>
+        <button id="closeRegModalBtn" type="button" class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white">✕</button>
+      </div>
+
+      <div id="firstAdminHint" class="mt-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-200">
+        👑 <strong>Админ-слот свободен!</strong> Вы будете первым зарегистрированным пользователем и получите права выдачи токенов.
+      </div>
+
+      <form id="registerForm" class="mt-4 space-y-3.5">
+        <div>
+          <label class="mb-1 block text-xs font-medium text-slate-300">Игровой никнейм *</label>
+          <input
+            id="regNickname"
+            type="text"
+            required
+            maxlength="24"
+            placeholder="Например: ShadowHunter"
+            class="w-full rounded-xl border border-slate-700 bg-obsidian px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:border-violet-500 focus:outline-none"
+          />
+        </div>
+
+        <div>
+          <label class="mb-1 block text-xs font-medium text-slate-300">Контакт / ID для связи по токенам</label>
+          <input
+            id="regContact"
+            type="text"
+            maxlength="40"
+            placeholder="Telegram / Discord / UID"
+            class="w-full rounded-xl border border-slate-700 bg-obsidian px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:border-violet-500 focus:outline-none"
+          />
+        </div>
+
+        <div>
+          <label class="mb-1 block text-xs font-medium text-slate-300">Аватар</label>
+          <div id="avatarPicker" class="flex flex-wrap gap-2">
+            <button type="button" data-avatar="🦊" class="avatar-opt rounded-xl border border-violet-500 bg-violet-500/20 px-3 py-1.5 text-lg">🦊</button>
+            <button type="button" data-avatar="🐉" class="avatar-opt rounded-xl border border-slate-700 bg-obsidian px-3 py-1.5 text-lg">🐉</button>
+            <button type="button" data-avatar="🤖" class="avatar-opt rounded-xl border border-slate-700 bg-obsidian px-3 py-1.5 text-lg">🤖</button>
+            <button type="button" data-avatar="🥷" class="avatar-opt rounded-xl border border-slate-700 bg-obsidian px-3 py-1.5 text-lg">🥷</button>
+            <button type="button" data-avatar="🧙‍♂️" class="avatar-opt rounded-xl border border-slate-700 bg-obsidian px-3 py-1.5 text-lg">🧙‍♂️</button>
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          class="w-full rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 py-3 text-sm font-bold text-white shadow-neon transition hover:brightness-110 active:scale-95"
+        >
+          Зарегистрироваться и войти в онлайн
+        </button>
+      </form>
+
+      <!-- Existing Profiles Switcher (for testing Admin + Player flow) -->
+      <div id="existingProfilesBox" class="mt-5 hidden border-t border-slate-800 pt-4">
+        <div class="mb-2 flex items-center justify-between">
+          <span class="text-xs font-semibold text-slate-400">Уже зарегистрированные аккаунты:</span>
+        </div>
+        <div id="existingProfilesList" class="max-h-36 space-y-1.5 overflow-y-auto"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =================================================================== -->
+  <!-- MODAL 2: PUBLISH NEW LOT ("Разместить лот")                           -->
+  <!-- =================================================================== -->
+  <div id="publishLotModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
+    <div class="w-full max-w-lg rounded-2xl border border-slate-800 bg-surface p-5 sm:p-6 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div>
+          <h3 class="text-lg font-extrabold text-white">Разместить новый лот</h3>
+          <p class="text-xs text-slate-400">Добавьте пакет токенов (Google Pay) или игровой предмет</p>
+        </div>
+        <button id="closePublishLotBtn" type="button" class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white">✕</button>
+      </div>
+
+      <form id="publishLotForm" class="mt-4 space-y-3.5">
+        <div class="grid grid-cols-2 gap-2">
+          <label class="cursor-pointer">
+            <input type="radio" name="lotKind" value="gpay" class="peer sr-only" checked />
+            <div class="rounded-xl border border-slate-700 bg-obsidian p-3 text-center text-xs font-semibold text-slate-300 peer-checked:border-emerald-400 peer-checked:bg-emerald-500/15 peer-checked:text-emerald-300">
+              💳 Лот Google Pay (Токены)
+            </div>
+          </label>
+          <label class="cursor-pointer">
+            <input type="radio" name="lotKind" value="item" class="peer sr-only" />
+            <div class="rounded-xl border border-slate-700 bg-obsidian p-3 text-center text-xs font-semibold text-slate-300 peer-checked:border-violet-400 peer-checked:bg-violet-500/15 peer-checked:text-violet-300">
+              ⚔️ Игровой предмет
+            </div>
+          </label>
+        </div>
+
+        <div>
+          <label class="mb-1 block text-xs font-medium text-slate-300">Название лота *</label>
+          <input
+            id="lotTitleInput"
+            type="text"
+            required
+            maxlength="50"
+            placeholder="Например: Пакет 2500 токенов или Клинок Бездны"
+            class="w-full rounded-xl border border-slate-700 bg-obsidian px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:border-violet-500 focus:outline-none"
+          />
+        </div>
+
+        <div>
+          <label class="mb-1 block text-xs font-medium text-slate-300">Описание</label>
+          <textarea
+            id="lotDescInput"
+            rows="2"
+            maxlength="140"
+            placeholder="Короткое описание бонусов или характеристик..."
+            class="w-full rounded-xl border border-slate-700 bg-obsidian px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:border-violet-500 focus:outline-none"
+          ></textarea>
+        </div>
+
+        <div id="gpayFields" class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="mb-1 block text-xs font-medium text-slate-300">Цена в долларах ($ USD) *</label>
+            <input
+              id="lotUsdInput"
+              type="number"
+              min="1"
+              step="0.01"
+              value="10"
+              class="w-full rounded-xl border border-slate-700 bg-obsidian px-3.5 py-2.5 text-sm font-bold text-emerald-300 focus:border-emerald-400 focus:outline-none"
+            />
+          </div>
+          <div>
+            <label class="mb-1 block text-xs font-medium text-slate-300">Выдаётся токенов *</label>
+            <input
+              id="lotTokensRewardInput"
+              type="number"
+              min="1"
+              step="1"
+              value="1000"
+              class="w-full rounded-xl border border-slate-700 bg-obsidian px-3.5 py-2.5 text-sm font-bold text-amber-300 focus:border-amber-400 focus:outline-none"
+            />
+          </div>
+        </div>
+
+        <div id="itemFields" class="hidden">
+          <label class="mb-1 block text-xs font-medium text-slate-300">Стоимость в токенах (🪙) *</label>
+          <input
+            id="lotTokenPriceInput"
+            type="number"
+            min="1"
+            step="1"
+            value="500"
+            class="w-full rounded-xl border border-slate-700 bg-obsidian px-3.5 py-2.5 text-sm font-bold text-amber-300 focus:border-violet-400 focus:outline-none"
+          />
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="mb-1 block text-xs font-medium text-slate-300">Иконка лота</label>
+            <select id="lotIconSelect" class="w-full rounded-xl border border-slate-700 bg-obsidian px-3 py-2.5 text-sm text-white">
+              <option value="🪙">🪙 Токены</option>
+              <option value="💎">💎 Кристаллы</option>
+              <option value="⚔️">⚔️ Оружие</option>
+              <option value="🛡️">🛡️ Броня</option>
+              <option value="🐉">🐉 Питомец</option>
+              <option value="🎁">🎁 Кейс</option>
+            </select>
+          </div>
+          <div>
+            <label class="mb-1 block text-xs font-medium text-slate-300">Редкость / Тег</label>
+            <select id="lotTagSelect" class="w-full rounded-xl border border-slate-700 bg-obsidian px-3 py-2.5 text-sm text-white">
+              <option value="Google Pay">Google Pay</option>
+              <option value="Популярное">Популярное</option>
+              <option value="Редкий">Редкий</option>
+              <option value="Легендарный">Легендарный</option>
+            </select>
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          class="w-full rounded-xl bg-gradient-to-r from-violet-600 to-emerald-500 py-3 text-sm font-extrabold text-white shadow-neon transition hover:brightness-110 active:scale-95"
+        >
+          Опубликовать лот в магазине
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- =================================================================== -->
+  <!-- MODAL 3: GOOGLE PAY CHECKOUT SHEET                                  -->
+  <!-- =================================================================== -->
+  <div id="gpayModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
+    <div class="w-full max-w-md rounded-2xl border border-emerald-500/30 bg-surface p-5 sm:p-6 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div class="flex items-center gap-2">
+          <span class="rounded-lg bg-white px-2.5 py-1 text-xs font-black tracking-tight text-slate-900">
+            <span class="text-blue-600">G</span><span class="text-red-500">Pay</span>
+          </span>
+          <span class="text-sm font-bold text-white">Оплата через Google Pay</span>
+        </div>
+        <button id="closeGpayModalBtn" type="button" class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white">✕</button>
+      </div>
+
+      <div id="gpayLotSummary" class="mt-4 rounded-xl border border-slate-800 bg-obsidian p-4">
+        <!-- Populated dynamically -->
+      </div>
+
+      <div class="mt-4 space-y-2.5 text-xs text-slate-300">
+        <div class="flex items-center justify-between rounded-xl border border-slate-800 bg-obsidian/70 px-3.5 py-2.5">
+          <span class="text-slate-400">Способ оплаты</span>
+          <span class="font-semibold text-white">Google Pay •••• 4829</span>
+        </div>
+        <div class="flex items-center justify-between rounded-xl border border-slate-800 bg-obsidian/70 px-3.5 py-2.5">
+          <span class="text-slate-400">Получатель</span>
+          <span id="gpayRecipientName" class="font-semibold text-emerald-300">Игрок</span>
+        </div>
+      </div>
+
+      <div class="mt-5 flex flex-col gap-2">
+        <button
+          id="confirmGpayBtn"
+          type="button"
+          class="flex w-full items-center justify-center gap-2 rounded-xl bg-white py-3 text-sm font-extrabold text-slate-950 transition hover:bg-slate-100 active:scale-95"
+        >
+          <span>Оплатить с</span>
+          <span class="font-black text-blue-600">G</span><span class="-ml-1 font-black text-red-500">Pay</span>
+        </button>
+        <button
+          id="gpayWriteAdminBtn"
+          type="button"
+          class="w-full rounded-xl border border-slate-700 bg-slate-800/70 py-2.5 text-xs font-semibold text-slate-200 hover:bg-slate-800"
+        >
+          💬 Написать админу по покупке токенов
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =================================================================== -->
+  <!-- DRAWER / MODAL 4: CHAT WITH ADMIN ("Писать админу по покупке токенов")-->
+  <!-- =================================================================== -->
+  <div id="chatModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
+    <div class="flex h-[82vh] max-h-[620px] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-800 bg-surface shadow-2xl">
+      <!-- Chat Header -->
+      <div class="flex items-center justify-between border-b border-slate-800 bg-obsidian/80 px-5 py-3.5">
+        <div class="flex items-center gap-3">
+          <div class="relative flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/20 text-lg">
+            👑
+            <span class="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-obsidian bg-emerald-400"></span>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="text-sm font-extrabold text-white">Чат по покупке токенов</h3>
+              <span class="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">Админ онлайн</span>
+            </div>
+            <p id="chatSubtitle" class="text-[11px] text-slate-400">Напишите администратору для покупки или уточнения токенов</p>
+          </div>
+        </div>
+        <button id="closeChatModalBtn" type="button" class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white">✕</button>
+      </div>
+
+      <!-- Messages Feed -->
+      <div id="chatMessagesList" class="flex-1 space-y-3 overflow-y-auto p-4 sm:p-5"></div>
+
+      <!-- Quick Templates for Token Purchase -->
+      <div class="border-t border-slate-800/80 bg-obsidian/50 px-4 py-2">
+        <div class="flex flex-wrap gap-1.5">
+          <button
+            type="button"
+            class="chat-template-btn rounded-full border border-slate-700 bg-surface px-3 py-1 text-[11px] text-slate-300 hover:border-emerald-400 hover:text-emerald-300"
+            data-msg="Привет! Хочу купить 1000 токенов за $10 через Google Pay."
+          >
+            💳 Хочу 1000 токенов за $10 (G Pay)
+          </button>
+          <button
+            type="button"
+            class="chat-template-btn rounded-full border border-slate-700 bg-surface px-3 py-1 text-[11px] text-slate-300 hover:border-amber-400 hover:text-amber-300"
+            data-msg="Здравствуйте! Подскажите, как оформить покупку токенов?"
+          >
+            🪙 Вопрос по покупке токенов
+          </button>
+        </div>
+      </div>
+
+      <!-- Message Input -->
+      <form id="chatForm" class="flex items-center gap-2 border-t border-slate-800 bg-obsidian p-3.5">
+        <input
+          id="chatInput"
+          type="text"
+          required
+          placeholder="Напишите сообщение администратору по покупке токенов..."
+          class="flex-1 rounded-xl border border-slate-700 bg-surface px-3.5 py-2.5 text-xs sm:text-sm text-white placeholder-slate-500 focus:border-emerald-400 focus:outline-none"
+        />
+        <button
+          type="submit"
+          class="rounded-xl bg-emerald-500 px-4 py-2.5 text-xs sm:text-sm font-extrabold text-slate-950 transition hover:bg-emerald-400 active:scale-95"
+        >
+          Отправить
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- =================================================================== -->
+  <!-- MODAL 5: ONLINE USERS POPOVER                                         -->
+  <!-- =================================================================== -->
+  <div id="onlineModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
+    <div class="w-full max-w-sm rounded-2xl border border-slate-800 bg-surface p-5 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-sm font-extrabold text-white">🟢 Игроки онлайн</h3>
+        <button id="closeOnlineModalBtn" type="button" class="rounded-lg p-1 text-slate-400 hover:text-white">✕</button>
+      </div>
+      <div id="onlineUsersList" class="mt-3 max-h-64 space-y-2 overflow-y-auto"></div>
+    </div>
+  </div>
+
+  <script>
+    /**
+     * NexusLoot — In-Memory Application State & Storefront Engine
+     * - First user who registers automatically becomes Admin and can issue tokens.
+     * - Supports Google Pay lots ($10 for 1000 tokens + other lots).
+     * - Supports publishing new lots (Google Pay token packs or gaming items).
+     * - Supports live chat with Admin regarding token purchases.
+     */
+    (function () {
+      // In-memory state store
+      const state = {
+        users: [], // { id, nickname, contact, avatar, isAdmin, tokens, online, createdAt }
+        currentUserId: null,
+        filter: 'all',
+        searchQuery: '',
+        selectedAvatar: '🦊',
+        selectedGpayLotId: null,
+        unreadCount: 1,
+        lots: [
+          {
+            id: 'lot-gpay-1000',
+            kind: 'gpay',
+            featured: true,
+            title: '1,000 Токенов — Пакет Google Pay',
+            description: 'Мгновенное зачисление 1000 токенов на ваш аккаунт через Google Pay.',
+            usdPrice: 10,
+            tokensReward: 1000,
+            tokenCost: 0,
+            icon: '🪙',
+            tag: 'Google Pay'
+          },
+          {
+            id: 'lot-gpay-250',
+            kind: 'gpay',
+            featured: false,
+            title: '250 Токенов — Стартовый набор',
+            description: 'Быстрый старт для покупки базовых предметов и кейсов.',
+            usdPrice: 3,
+            tokensReward: 250,
+            tokenCost: 0,
+            icon: '💎',
+            tag: 'Google Pay'
+          },
+          {
+            id: 'lot-gpay-5000',
+            kind: 'gpay',
+            featured: false,
+            title: '5,000 Токенов + Бонус 500',
+            description: 'Крупный пак токенов через Google Pay с бонусом +500 токенов.',
+            usdPrice: 45,
+            tokensReward: 5500,
+            tokenCost: 0,
+            icon: '🔥',
+            tag: 'Google Pay'
+          },
+          {
+            id: 'lot-item-blade',
+            kind: 'item',
+            featured: false,
+            title: 'Клинок Квантового Разлома',
+            description: 'Редкое энергетическое оружие с эффектом кристаллического следа.',
+            usdPrice: 0,
+            tokensReward: 0,
+            tokenCost: 850,
+            icon: '⚔️',
+            tag: 'Редкий'
+          },
+          {
+            id: 'lot-item-dragon',
+            kind: 'item',
+            featured: false,
+            title: 'Обсидиановый Дракон-Спутник',
+            description: 'Легендарный питомец, отображающийся рядом с вашим ником в лобби.',
+            usdPrice: 0,
+            tokensReward: 0,
+            tokenCost: 2200,
+            icon: '🐉',
+            tag: 'Легендарный'
+          },
+          {
+            id: 'lot-item-pass',
+            kind: 'item',
+            featured: false,
+            title: 'Сезонный Пропуск Nexus VIP',
+            description: 'Открывает эксклюзивные награды сезона и рамку профиля.',
+            usdPrice: 0,
+            tokensReward: 0,
+            tokenCost: 1000,
+            icon: '🎁',
+            tag: 'Популярное'
+          }
+        ],
+        messages: [
+          {
+            id: 'msg-welcome',
+            senderId: 'system-admin',
+            senderName: 'Администратор NexusLoot',
+            senderRole: 'admin',
+            text: 'Привет! Здесь вы можете написать по поводу покупки токенов (например, 1000 токенов за $10 через Google Pay) или запросить выдачу.',
+            time: nowTime()
+          }
+        ]
+      };
+
+      function nowTime() {
+        const d = new Date();
+        return d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+      }
+
+      function showToast(message, type = 'info') {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        const colors = {
+          success: 'border-emerald-500/50 bg-emerald-950/90 text-emerald-200',
+          warning: 'border-amber-500/50 bg-amber-950/90 text-amber-200',
+          info: 'border-violet-500/50 bg-slate-900/95 text-slate-100'
+        };
+        toast.className = `pointer-events-auto rounded-xl border px-4 py-3 text-xs font-medium shadow-xl backdrop-blur-md transition-all ${colors[type] || colors.info}`;
+        toast.textContent = message;
+        container.appendChild(toast);
+        setTimeout(() => {
+          toast.style.opacity = '0';
+          toast.style.transform = 'translateY(8px)';
+          setTimeout(() => toast.remove(), 250);
+        }, 3200);
+      }
+
+      function getCurrentUser() {
+        return state.users.find(u => u.id === state.currentUserId) || null;
+      }
+
+      function getAdminUser() {
+        return state.users.find(u => u.isAdmin) || null;
+      }
+
+      function getOnlineUsers() {
+        const registeredOnline = state.users.filter(u => u.online);
+        if (registeredOnline.length > 0) return registeredOnline;
+        // Fallback guest online count so online presence is always visible
+        return [{
+          id: 'guest-observer',
+          nickname: 'Гость маркетплейса',
+          avatar: '👀',
+          isAdmin: false,
+          tokens: 0,
+          online: true
+        }];
+      }
+
+      // ===================================================================
+      // RENDER FUNCTIONS
+      // ===================================================================
+      function renderHeaderAndStats() {
+        const currentUser = getCurrentUser();
+        const adminUser = getAdminUser();
+        const onlineUsers = getOnlineUsers();
+
+        document.getElementById('onlineCountHeader').textContent = onlineUsers.length;
+        document.getElementById('statOnlineUsers').textContent = onlineUsers.length;
+        document.getElementById('statTotalUsers').textContent = state.users.length;
+        document.getElementById('statLotsCount').textContent = state.lots.length;
+        document.getElementById('statAdminName').textContent = adminUser
+          ? `${adminUser.avatar} ${adminUser.nickname}`
+          : 'Ожидает 1-го рег.';
+
+        const adminStatusTag = document.getElementById('adminStatusTag');
+        const firstAdminHint = document.getElementById('firstAdminHint');
+        if (adminUser) {
+          adminStatusTag.textContent = `👑 ${adminUser.nickname}`;
+          firstAdminHint.innerHTML = `👑 Роль Администратора уже закреплена за <strong>${escapeHtml(adminUser.nickname)}</strong>. Новые регистрации получают роль Игрока.`;
+        } else {
+          adminStatusTag.textContent = 'Слот свободен';
+          firstAdminHint.innerHTML = `👑 <strong>Админ-слот свободен!</strong> Вы будете первым зарегистрированным пользователем и сможете выдавать токены.`;
+        }
+
+        const roleBadge = document.getElementById('userRoleBadge');
+        const userNameDisplay = document.getElementById('userNameDisplay');
+        const userTokensDisplay = document.getElementById('userTokensDisplay');
+        const regBtnLabel = document.getElementById('regBtnLabel');
+
+        if (currentUser) {
+          userNameDisplay.textContent = `${currentUser.avatar} ${currentUser.nickname}`;
+          userTokensDisplay.textContent = currentUser.tokens.toLocaleString('ru-RU');
+          regBtnLabel.textContent = 'Аккаунты';
+          if (currentUser.isAdmin) {
+            roleBadge.textContent = '👑 АДМИН';
+            roleBadge.className = 'rounded-md bg-amber-500/20 border border-amber-400/40 px-1.5 py-0.5 text-[10px] font-extrabold uppercase text-amber-300';
+          } else {
+            roleBadge.textContent = '🎮 ИГРОК';
+            roleBadge.className = 'rounded-md bg-violet-500/20 border border-violet-400/40 px-1.5 py-0.5 text-[10px] font-bold uppercase text-violet-300';
+          }
+        } else {
+          userNameDisplay.textContent = 'Не авторизован';
+          userTokensDisplay.textContent = '0';
+          regBtnLabel.textContent = 'Регистрация';
+          roleBadge.textContent = 'ГОСТЬ';
+          roleBadge.className = 'rounded-md bg-slate-800 px-1.5 py-0.5 text-[10px] font-bold uppercase text-slate-300';
+        }
+
+        // Admin Panel visibility
+        const adminPanel = document.getElementById('adminPanelSection');
+        if (currentUser && currentUser.isAdmin) {
+          adminPanel.classList.remove('hidden');
+          renderAdminPanel();
+        } else {
+          adminPanel.classList.add('hidden');
+        }
+
+        // Unread badge
+        const unreadBadge = document.getElementById('unreadBadge');
+        if (state.unreadCount > 0) {
+          unreadBadge.textContent = state.unreadCount;
+          unreadBadge.classList.remove('hidden');
+        } else {
+          unreadBadge.classList.add('hidden');
+        }
+      }
+
+      function renderAdminPanel() {
+        const select = document.getElementById('targetUserSelect');
+        const list = document.getElementById('adminUsersList');
+        const msgCount = document.getElementById('adminMsgCount');
+
+        msgCount.textContent = state.messages.length;
+
+        select.innerHTML = state.users.map(u => `
+          <option value="${u.id}">
+            ${u.avatar} ${escapeHtml(u.nickname)} ${u.isAdmin ? '(Админ)' : ''} — ${u.tokens} 🪙
+          </option>
+        `).join('');
+
+        if (state.users.length === 0) {
+          list.innerHTML = `<p class="text-xs text-slate-400">Пока нет зарегистрированных пользователей.</p>`;
+          return;
+        }
+
+        list.innerHTML = state.users.map(u => `
+          <div class="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-800 bg-surface/90 px-3 py-2">
+            <div class="flex items-center gap-2.5">
+              <span class="text-lg">${u.avatar}</span>
+              <div>
+                <div class="flex items-center gap-1.5 text-xs font-bold text-white">
+                  <span>${escapeHtml(u.nickname)}</span>
+                  ${u.isAdmin ? '<span class="rounded bg-amber-500/20 px-1.5 py-0.5 text-[10px] text-amber-300">Админ</span>' : ''}
+                  <span class="inline-flex items-center gap-1 text-[10px] text-emerald-400">
+                    <span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span> онлайн
+                  </span>
+                </div>
+                <div class="text-[11px] text-slate-400">
+                  Баланс: <strong class="text-amber-300">${u.tokens.toLocaleString('ru-RU')} 🪙</strong>
+                  ${u.contact ? ` • Контакт: <span class="text-slate-300">${escapeHtml(u.contact)}</span>` : ''}
+                </div>
+              </div>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <button
+                type="button"
+                data-grant-user="${u.id}"
+                data-grant-amount="1000"
+                class="quick-grant-btn rounded-lg bg-emerald-500/20 border border-emerald-500/40 px-2.5 py-1.5 text-[11px] font-bold text-emerald-300 hover:bg-emerald-500/30"
+              >
+                +1000 🪙
+              </button>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      function renderLots() {
+        const grid = document.getElementById('lotsGrid');
+        const q = state.searchQuery.trim().toLowerCase();
+
+        const filtered = state.lots.filter(lot => {
+          const matchesFilter = state.filter === 'all' || lot.kind === state.filter;
+          const matchesQuery = !q ||
+            lot.title.toLowerCase().includes(q) ||
+            lot.description.toLowerCase().includes(q) ||
+            lot.tag.toLowerCase().includes(q);
+          return matchesFilter && matchesQuery;
+        });
+
+        if (filtered.length === 0) {
+          grid.innerHTML = `
+            <div class="col-span-full rounded-2xl border border-slate-800 bg-surface p-8 text-center">
+              <p class="text-sm font-semibold text-slate-300">Лоты по вашему запросу не найдены</p>
+              <p class="mt-1 text-xs text-slate-500">Попробуйте сбросить фильтр или разместите новый лот.</p>
+            </div>
+          `;
+          return;
+        }
+
+        grid.innerHTML = filtered.map(lot => {
+          const isGpay = lot.kind === 'gpay';
+          const borderClass = lot.featured
+            ? 'border-emerald-400/60 shadow-emeraldGlow bg-gradient-to-b from-emerald-950/30 via-surface to-surface'
+            : isGpay
+              ? 'border-slate-800 hover:border-emerald-500/40 bg-surface'
+              : 'border-slate-800 hover:border-violet-500/40 bg-surface';
+
+          return `
+            <article class="flex flex-col justify-between rounded-2xl border ${borderClass} p-5 transition duration-200">
+              <div>
+                <div class="flex items-start justify-between gap-2">
+                  <div class="flex h-12 w-12 items-center justify-center rounded-xl border border-slate-700/80 bg-obsidian text-2xl">
+                    ${lot.icon}
+                  </div>
+                  <div class="flex flex-wrap items-center gap-1.5">
+                    ${lot.featured ? '<span class="rounded-full bg-emerald-500/20 border border-emerald-400/40 px-2.5 py-0.5 text-[10px] font-extrabold uppercase text-emerald-300">Хит Google Pay</span>' : ''}
+                    <span class="rounded-full border border-slate-700 bg-obsidian px-2.5 py-0.5 text-[10px] font-semibold text-slate-300">
+                      ${escapeHtml(lot.tag)}
+                    </span>
+                  </div>
+                </div>
+
+                <h3 class="mt-4 text-base font-bold text-white">${escapeHtml(lot.title)}</h3>
+                <p class="mt-1.5 text-xs leading-relaxed text-slate-400">${escapeHtml(lot.description)}</p>
+              </div>
+
+              <div class="mt-5 border-t border-slate-800/80 pt-4">
+                ${isGpay ? `
+                  <div class="mb-3 flex items-baseline justify-between">
+                    <div>
+                      <span class="text-xs text-slate-400">Google Pay</span>
+                      <div class="text-xl font-extrabold text-emerald-400">$${Number(lot.usdPrice).toFixed(2)}</div>
+                    </div>
+                    <div class="text-right">
+                      <span class="text-xs text-slate-400">Получите</span>
+                      <div class="text-sm font-extrabold text-amber-300">+${Number(lot.tokensReward).toLocaleString('ru-RU')} 🪙</div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    data-gpay-lot="${lot.id}"
+                    class="gpay-buy-btn flex w-full items-center justify-center gap-2 rounded-xl bg-white py-2.5 text-xs font-extrabold text-slate-950 transition hover:bg-slate-100 active:scale-95"
+                  >
+                    <span>Купить через</span>
+                    <span class="font-black text-blue-600">G</span><span class="-ml-1 font-black text-red-500">Pay</span>
+                  </button>
+                ` : `
+                  <div class="mb-3 flex items-center justify-between">
+                    <span class="text-xs text-slate-400">Цена лота</span>
+                    <span class="text-base font-extrabold text-amber-300">${Number(lot.tokenCost).toLocaleString('ru-RU')} 🪙</span>
+                  </div>
+                  <button
+                    type="button"
+                    data-item-lot="${lot.id}"
+                    class="item-buy-btn w-full rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 py-2.5 text-xs font-bold text-white transition hover:brightness-110 active:scale-95"
+                  >
+                    Купить за токены
+                  </button>
+                `}
+              </div>
+            </article>
+          `;
+        }).join('');
+      }
+
+      function renderChatMessages() {
+        const container = document.getElementById('chatMessagesList');
+        const currentUser = getCurrentUser();
+
+        container.innerHTML = state.messages.map(m => {
+          const isMine = currentUser && m.senderId === currentUser.id;
+          const isAdminMsg = m.senderRole === 'admin' || m.senderId === 'system-admin';
+          return `
+            <div class="flex flex-col ${isMine ? 'items-end' : 'items-start'}">
+              <div class="mb-1 flex items-center gap-1.5 text-[11px] text-slate-400">
+                <span class="font-semibold ${isAdminMsg ? 'text-amber-300' : 'text-slate-300'}">${escapeHtml(m.senderName)}</span>
+                ${isAdminMsg ? '<span class="rounded bg-amber-500/20 px-1.5 py-0.2 text-[9px] font-bold text-amber-300">АДМИН</span>' : ''}
+                <span>• ${m.time}</span>
+              </div>
+              <div class="max-w-[85%] rounded-2xl px-3.5 py-2.5 text-xs sm:text-sm leading-relaxed ${
+                isMine
+                  ? 'bg-violet-600 text-white rounded-tr-sm'
+                  : isAdminMsg
+                    ? 'border border-amber-500/30 bg-amber-500/10 text-slate-100 rounded-tl-sm'
+                    : 'border border-slate-700 bg-obsidian text-slate-200 rounded-tl-sm'
+              }">
+                ${escapeHtml(m.text)}
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        container.scrollTop = container.scrollHeight;
+      }
+
+      function renderOnlineUsersModal() {
+        const list = document.getElementById('onlineUsersList');
+        const online = getOnlineUsers();
+        list.innerHTML = online.map(u => `
+          <div class="flex items-center justify-between rounded-xl border border-slate-800 bg-obsidian px-3 py-2">
+            <div class="flex items-center gap-2">
+              <span class="text-base">${u.avatar}</span>
+              <div>
+                <div class="text-xs font-bold text-white">${escapeHtml(u.nickname)}</div>
+                <div class="text-[10px] text-slate-400">${u.isAdmin ? '👑 Администратор' : '🎮 Игрок'}</div>
+              </div>
+            </div>
+            <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-400">
+              <span class="h-2 w-2 rounded-full bg-emerald-400"></span> онлайн
+            </span>
+          </div>
+        `).join('');
+      }
+
+      function renderExistingProfiles() {
+        const box = document.getElementById('existingProfilesBox');
+        const list = document.getElementById('existingProfilesList');
+        if (state.users.length === 0) {
+          box.classList.add('hidden');
+          return;
+        }
+        box.classList.remove('hidden');
+        list.innerHTML = state.users.map(u => `
+          <div class="flex items-center justify-between rounded-xl border border-slate-800 bg-obsidian px-3 py-2 text-xs">
+            <div>
+              <span class="font-bold text-white">${u.avatar} ${escapeHtml(u.nickname)}</span>
+              ${u.isAdmin ? '<span class="ml-1 rounded bg-amber-500/20 px-1.5 py-0.5 text-[10px] text-amber-300">Админ</span>' : ''}
+              <span class="ml-1 text-amber-300">${u.tokens} 🪙</span>
+            </div>
+            <button
+              type="button"
+              data-switch-user="${u.id}"
+              class="switch-user-btn rounded-lg bg-slate-800 px-2.5 py-1 text-[11px] font-semibold text-violet-300 hover:bg-slate-700"
+            >
+              Войти
+            </button>
+          </div>
+        `).join('');
+      }
+
+      function escapeHtml(str) {
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      }
+
+      // ===================================================================
+      // EVENT LISTENERS
+      // ===================================================================
+      // Registration Modal
+      const regModal = document.getElementById('regModal');
+      function openRegModal() {
+        renderExistingProfiles();
+        regModal.classList.remove('hidden');
+        regModal.classList.add('flex');
+        document.getElementById('regNickname').focus();
+      }
+      function closeRegModal() {
+        regModal.classList.add('hidden');
+        regModal.classList.remove('flex');
+      }
+
+      document.getElementById('openRegBtn').addEventListener('click', openRegModal);
+      document.getElementById('heroRegBtn').addEventListener('click', openRegModal);
+      document.getElementById('closeRegModalBtn').addEventListener('click', closeRegModal);
+
+      // Avatar Picker
+      document.querySelectorAll('.avatar-opt').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.avatar-opt').forEach(b => {
+            b.className = 'avatar-opt rounded-xl border border-slate-700 bg-obsidian px-3 py-1.5 text-lg';
+          });
+          btn.className = 'avatar-opt rounded-xl border border-violet-500 bg-violet-500/20 px-3 py-1.5 text-lg';
+          state.selectedAvatar = btn.dataset.avatar;
+        });
+      });
+
+      // Registration Submit — First user becomes Admin
+      document.getElementById('registerForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const nickname = document.getElementById('regNickname').value.trim();
+        const contact = document.getElementById('regContact').value.trim();
+        if (!nickname) return;
+
+        const isFirstUser = state.users.length === 0;
+        const newUser = {
+          id: 'user-' + Date.now(),
+          nickname,
+          contact,
+          avatar: state.selectedAvatar,
+          isAdmin: isFirstUser,
+          tokens: isFirstUser ? 5000 : 250,
+          online: true,
+          createdAt: nowTime()
+        };
+
+        state.users.push(newUser);
+        state.currentUserId = newUser.id;
+
+        document.getElementById('regNickname').value = '';
+        document.getElementById('regContact').value = '';
+        closeRegModal();
+        renderAll();
+
+        if (isFirstUser) {
+          showToast(`👑 Поздравляем, ${nickname}! Вы первый зарегистрированный и стали Администратором.`, 'warning');
+        } else {
+          showToast(`🎮 Добро пожаловать, ${nickname}! Вы в сети.`, 'success');
+        }
+      });
+
+      // Switch User from Registration Modal
+      document.getElementById('existingProfilesList').addEventListener('click', (e) => {
+        const btn = e.target.closest('.switch-user-btn');
+        if (!btn) return;
+        const userId = btn.dataset.switchUser;
+        state.users.forEach(u => { u.online = (u.id === userId); });
+        state.currentUserId = userId;
+        closeRegModal();
+        renderAll();
+        const active = getCurrentUser();
+        if (active) showToast(`Переключено на аккаунт: ${active.nickname}`, 'info');
+      });
+
+      // Publish Lot Modal
+      const publishLotModal = document.getElementById('publishLotModal');
+      function openPublishLotModal() {
+        publishLotModal.classList.remove('hidden');
+        publishLotModal.classList.add('flex');
+      }
+      function closePublishLotModal() {
+        publishLotModal.classList.add('hidden');
+        publishLotModal.classList.remove('flex');
+      }
+
+      document.getElementById('openPublishLotBtn').addEventListener('click', openPublishLotModal);
+      document.getElementById('adminQuickLotBtn').addEventListener('click', openPublishLotModal);
+      document.getElementById('closePublishLotBtn').addEventListener('click', closePublishLotModal);
+
+      // Toggle fields in Publish Lot form
+      document.querySelectorAll('input[name="lotKind"]').forEach(radio => {
+        radio.addEventListener('change', () => {
+          const isGpay = radio.value === 'gpay';
+          document.getElementById('gpayFields').classList.toggle('hidden', !isGpay);
+          document.getElementById('itemFields').classList.toggle('hidden', isGpay);
+        });
+      });
+
+      document.getElementById('publishLotForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const kind = document.querySelector('input[name="lotKind"]:checked').value;
+        const title = document.getElementById('lotTitleInput').value.trim();
+        const description = document.getElementById('lotDescInput').value.trim() || 'Новый лот в маркетплейсе NexusLoot.';
+        const icon = document.getElementById('lotIconSelect').value;
+        const tag = document.getElementById('lotTagSelect').value;
+
+        if (!title) return;
+
+        const newLot = {
+          id: 'lot-' + Date.now(),
+          kind,
+          featured: false,
+          title,
+          description,
+          usdPrice: kind === 'gpay' ? Number(document.getElementById('lotUsdInput').value || 10) : 0,
+          tokensReward: kind === 'gpay' ? Number(document.getElementById('lotTokensRewardInput').value || 1000) : 0,
+          tokenCost: kind === 'item' ? Number(document.getElementById('lotTokenPriceInput').value || 500) : 0,
+          icon,
+          tag: kind === 'gpay' ? 'Google Pay' : tag
+        };
+
+        state.lots.unshift(newLot);
+        document.getElementById('lotTitleInput').value = '';
+        document.getElementById('lotDescInput').value = '';
+        closePublishLotModal();
+        renderAll();
+        showToast(`✨ Лот «${title}» успешно размещён!`, 'success');
+      });
+
+      // Lot Filtering & Search
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.filter-btn').forEach(b => {
+            b.className = 'filter-btn rounded-xl border border-slate-800 bg-surface px-3.5 py-2 text-xs font-semibold text-slate-300 hover:border-slate-700';
+          });
+          btn.className = 'filter-btn rounded-xl bg-violet-600 px-3.5 py-2 text-xs font-bold text-white';
+          state.filter = btn.dataset.filter;
+          renderLots();
+        });
+      });
+
+      document.getElementById('lotSearchInput').addEventListener('input', (e) => {
+        state.searchQuery = e.target.value;
+        renderLots();
+      });
+
+      // Lot Actions: Google Pay Buy & Item Token Buy
+      const gpayModal = document.getElementById('gpayModal');
+      document.getElementById('lotsGrid').addEventListener('click', (e) => {
+        const gpayBtn = e.target.closest('.gpay-buy-btn');
+        if (gpayBtn) {
+          const lot = state.lots.find(l => l.id === gpayBtn.dataset.gpayLot);
+          if (!lot) return;
+          state.selectedGpayLotId = lot.id;
+
+          const currentUser = getCurrentUser();
+          document.getElementById('gpayRecipientName').textContent = currentUser
+            ? `${currentUser.avatar} ${currentUser.nickname}`
+            : 'Гость (войдите или зарегистрируйтесь)';
+
+          document.getElementById('gpayLotSummary').innerHTML = `
+            <div class="flex items-center justify-between gap-3">
+              <div class="flex items-center gap-3">
+                <span class="text-2xl">${lot.icon}</span>
+                <div>
+                  <div class="text-sm font-bold text-white">${escapeHtml(lot.title)}</div>
+                  <div class="text-xs text-amber-300 font-semibold">+${Number(lot.tokensReward).toLocaleString('ru-RU')} токенов</div>
+                </div>
+              </div>
+              <div class="text-lg font-extrabold text-emerald-400">$${Number(lot.usdPrice).toFixed(2)}</div>
+            </div>
+          `;
+
+          gpayModal.classList.remove('hidden');
+          gpayModal.classList.add('flex');
+          return;
+        }
+
+        const itemBtn = e.target.closest('.item-buy-btn');
+        if (itemBtn) {
+          const lot = state.lots.find(l => l.id === itemBtn.dataset.itemLot);
+          if (!lot) return;
+          const currentUser = getCurrentUser();
+          if (!currentUser) {
+            showToast('Сначала зарегистрируйтесь, чтобы покупать предметы за токены.', 'warning');
+            openRegModal();
+            return;
+          }
+          if (currentUser.tokens < lot.tokenCost) {
+            showToast(`Недостаточно токенов (нужно ${lot.tokenCost} 🪙). Купите через Google Pay или напишите админу.`, 'warning');
+            return;
+          }
+          currentUser.tokens -= lot.tokenCost;
+          renderAll();
+          showToast(`🎉 Вы купили «${lot.title}» за ${lot.tokenCost} 🪙!`, 'success');
+        }
+      });
+
+      document.getElementById('closeGpayModalBtn').addEventListener('click', () => {
+        gpayModal.classList.add('hidden');
+        gpayModal.classList.remove('flex');
+      });
+
+      document.getElementById('confirmGpayBtn').addEventListener('click', () => {
+        const lot = state.lots.find(l => l.id === state.selectedGpayLotId);
+        if (!lot) return;
+        const currentUser = getCurrentUser();
+        if (!currentUser) {
+          gpayModal.classList.add('hidden');
+          gpayModal.classList.remove('flex');
+          showToast('Зарегистрируйтесь, чтобы получить токены на аккаунт.', 'warning');
+          openRegModal();
+          return;
+        }
+        currentUser.tokens += Number(lot.tokensReward);
+        gpayModal.classList.add('hidden');
+        gpayModal.classList.remove('flex');
+        renderAll();
+        showToast(`✅ Оплата Google Pay ($${lot.usdPrice}) прошла! Зачислено +${lot.tokensReward} 🪙`, 'success');
+      });
+
+      document.getElementById('gpayWriteAdminBtn').addEventListener('click', () => {
+        const lot = state.lots.find(l => l.id === state.selectedGpayLotId);
+        gpayModal.classList.add('hidden');
+        gpayModal.classList.remove('flex');
+        openChatModal();
+        if (lot) {
+          document.getElementById('chatInput').value = `Здравствуйте! Хочу купить лот «${lot.title}» (${lot.tokensReward} токенов за $${lot.usdPrice}) через Google Pay.`;
+        }
+      });
+
+      // Chat Modal ("Написать админу по покупке токенов")
+      const chatModal = document.getElementById('chatModal');
+      function openChatModal() {
+        state.unreadCount = 0;
+        renderChatMessages();
+        renderHeaderAndStats();
+        chatModal.classList.remove('hidden');
+        chatModal.classList.add('flex');
+        document.getElementById('chatInput').focus();
+      }
+      function closeChatModal() {
+        chatModal.classList.add('hidden');
+        chatModal.classList.remove('flex');
+      }
+
+      document.getElementById('openChatBtn').addEventListener('click', openChatModal);
+      document.getElementById('heroMsgAdminBtn').addEventListener('click', openChatModal);
+      document.getElementById('adminOpenChatBtn').addEventListener('click', openChatModal);
+      document.getElementById('closeChatModalBtn').addEventListener('click', closeChatModal);
+
+      document.querySelectorAll('.chat-template-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.getElementById('chatInput').value = btn.dataset.msg;
+          document.getElementById('chatInput').focus();
+        });
+      });
+
+      document.getElementById('chatForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const input = document.getElementById('chatInput');
+        const text = input.value.trim();
+        if (!text) return;
+
+        const currentUser = getCurrentUser();
+        const senderName = currentUser ? `${currentUser.avatar} ${currentUser.nickname}` : 'Гость';
+        const senderRole = currentUser && currentUser.isAdmin ? 'admin' : 'player';
+
+        state.messages.push({
+          id: 'msg-' + Date.now(),
+          senderId: currentUser ? currentUser.id : 'guest',
+          senderName,
+          senderRole,
+          text,
+          time: nowTime()
+        });
+
+        input.value = '';
+        renderChatMessages();
+        renderHeaderAndStats();
+
+        // Auto-reply from Admin if player writes about tokens
+        if (senderRole !== 'admin') {
+          setTimeout(() => {
+            const admin = getAdminUser();
+            const adminLabel = admin ? `Админ (${admin.nickname})` : 'Администратор NexusLoot';
+            state.messages.push({
+              id: 'msg-reply-' + Date.now(),
+              senderId: admin ? admin.id : 'system-admin',
+              senderName: adminLabel,
+              senderRole: 'admin',
+              text: 'Принято! Проверяю заявку на токены. Если вы уже оплатили лот Google Pay ($10 = 1000 токенов) или ждёте выдачу — админ подтвердит и начислит токены.',
+              time: nowTime()
+            });
+            renderChatMessages();
+          }, 550);
+        }
+      });
+
+      // Admin Token Issuance Form & Quick Grant
+      document.getElementById('issueTokensForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const currentUser = getCurrentUser();
+        if (!currentUser || !currentUser.isAdmin) {
+          showToast('Только первый зарегистрированный администратор может выдавать токены.', 'warning');
+          return;
+        }
+        const targetId = document.getElementById('targetUserSelect').value;
+        const amount = Number(document.getElementById('issueTokensAmount').value);
+        const targetUser = state.users.find(u => u.id === targetId);
+        if (!targetUser || !amount || amount <= 0) return;
+
+        targetUser.tokens += amount;
+        state.messages.push({
+          id: 'msg-grant-' + Date.now(),
+          senderId: currentUser.id,
+          senderName: `👑 ${currentUser.nickname}`,
+          senderRole: 'admin',
+          text: `Выдано +${amount.toLocaleString('ru-RU')} 🪙 игроку ${targetUser.nickname}.`,
+          time: nowTime()
+        });
+
+        renderAll();
+        showToast(`🪙 Выдано +${amount} токенов пользователю ${targetUser.nickname}!`, 'success');
+      });
+
+      document.querySelectorAll('.preset-token-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.getElementById('issueTokensAmount').value = btn.dataset.presetTokens;
+        });
+      });
+
+      document.getElementById('adminUsersList').addEventListener('click', (e) => {
+        const grantBtn = e.target.closest('.quick-grant-btn');
+        if (!grantBtn) return;
+        const userId = grantBtn.dataset.grantUser;
+        const amount = Number(grantBtn.dataset.grantAmount || 1000);
+        const targetUser = state.users.find(u => u.id === userId);
+        if (!targetUser) return;
+        targetUser.tokens += amount;
+        renderAll();
+        showToast(`🪙 Быстрая выдача: +${amount} токенов для ${targetUser.nickname}`, 'success');
+      });
+
+      // Online Users Modal
+      const onlineModal = document.getElementById('onlineModal');
+      document.getElementById('onlineBadgeBtn').addEventListener('click', () => {
+        renderOnlineUsersModal();
+        onlineModal.classList.remove('hidden');
+        onlineModal.classList.add('flex');
+      });
+      document.getElementById('closeOnlineModalBtn').addEventListener('click', () => {
+        onlineModal.classList.add('hidden');
+        onlineModal.classList.remove('flex');
+      });
+
+      function renderAll() {
+        renderHeaderAndStats();
+        renderLots();
+        renderChatMessages();
+      }
+
+      // Initial Render
+      renderAll();
+    })();
+  </script>
+</body>
+</html>
